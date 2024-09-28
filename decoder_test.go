@@ -48,6 +48,8 @@ func TestDecode(t *testing.T) {
 			val11 = rnd.Int()
 			val12 = rnd.Float32()
 			val13 = rnd.Float64()
+			key2  = randString()
+			val14 = randString()
 			data  = []byte(fmt.Sprintf(`{
 		"Key1"  "%s"
 		"key2"  "%s"
@@ -72,7 +74,12 @@ func TestDecode(t *testing.T) {
 		"Key17" "1"
 		"Key18" "%f"
 		"Key19" "%f"
-	}`, val1, val2, val3, key1, val4, val5, val6, val7, val8, val9, val10, val11, val12, val13))
+		"Key20" {
+			"%s" 	{
+				"key22" "%s"
+			}
+		}
+	}`, val1, val2, val3, key1, val4, val5, val6, val7, val8, val9, val10, val11, val12, val13, key2, val14))
 			obj = struct {
 				Key1 string
 				Key2 string `vdf:"key2"`
@@ -90,6 +97,9 @@ func TestDecode(t *testing.T) {
 				Key17 bool
 				Key18 float32
 				Key19 float64
+				Key20 map[string]struct {
+					Key22 string `vdf:"key22"`
+				}
 			}{}
 		)
 
@@ -126,6 +136,8 @@ func TestDecode(t *testing.T) {
 			t.Fatalf("unexpected value %f looking for %f", obj.Key18, val12)
 		} else if !floatEqual(obj.Key19, val13) {
 			t.Fatalf("unexpected value %f looking for %f", obj.Key19, val13)
+		} else if obj.Key20[key2].Key22 != val14 {
+			t.Fatalf("unexpected value %s looking for %s", obj.Key20[key2].Key22, val14)
 		}
 	}
 }
