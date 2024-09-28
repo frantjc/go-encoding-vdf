@@ -78,12 +78,8 @@ func (d *Decoder) Decode(v any) error {
 		}
 	case reflect.Map:
 		isMap = true
-
-		if vRefVal.Type().Key().Kind() != reflect.String {
-			return fmt.Errorf("invalid map key kind: %s", vRefType.Kind())
-		}
-	default:
-		return fmt.Errorf("invalid kind: %s", vRefType.Kind())
+	// default:
+	// 	return fmt.Errorf("invalid kind: %s", vRefType.Kind())
 	}
 
 	var (
