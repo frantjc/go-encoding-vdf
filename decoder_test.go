@@ -1,3 +1,4 @@
+//nolint:gosec
 package vdf_test
 
 import (
@@ -11,17 +12,18 @@ import (
 	vdf "github.com/frantjc/go-encoding-vdf"
 )
 
-var rnd = rand.New(rand.NewSource(time.Now().UnixNano())) //nolint:gosec
+var rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 const (
-	letters    = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	lenLetters = len(letters)
-	max        = 16
+	letters      = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	lenLetters   = len(letters)
+	maxInt       = 16
+	floatEpsilon = 0.0001
 )
 
 func randString() string {
 	var (
-		n = rnd.Intn(max) + 1
+		n = rnd.Intn(maxInt) + 1
 		b = make([]byte, n)
 	)
 	for i := range b {
@@ -31,24 +33,30 @@ func randString() string {
 	return string(b)
 }
 
+func floatEqual[T float32 | float64](a, b T) bool {
+	return math.Abs(float64(a)-float64(b)) <= floatEpsilon
+}
+
 func TestDecode(t *testing.T) {
-	for i := 0; i < rnd.Intn(max); i++ {
+	for i := 0; i < rnd.Intn(maxInt); i++ {
 		var (
-			val1  = randString()
-			val2  = randString()
-			val3  = randString()
-			key1  = randString()
-			val4  = randString()
-			val5  = randString()
-			val6  = randString()
-			val7  = rnd.Int()
-			val8  = rnd.Int()
-			val9  = rnd.Int()
-			val10 = rnd.Int()
-			val11 = rnd.Int()
-			val12 = rnd.Float32()
-			val13 = rnd.Float64()
-			data  = []byte(fmt.Sprintf(`{
+			string1 = randString()
+			string2 = randString()
+			string3 = randString()
+			key1    = randString()
+			string4 = randString()
+			string5 = randString()
+			string6 = randString()
+			int1    = rnd.Int()
+			int2    = rnd.Int()
+			int3    = rnd.Int()
+			int4    = rnd.Int()
+			int5    = rnd.Int()
+			float1  = rnd.Float32()
+			float2  = rnd.Float64()
+			key2    = randString()
+			string7 = randString()
+			data    = []byte(fmt.Sprintf(`{
 		"Key1"  "%s"
 		"key2"  "%s"
 		"Key3"  {
@@ -72,7 +80,12 @@ func TestDecode(t *testing.T) {
 		"Key17" "1"
 		"Key18" "%f"
 		"Key19" "%f"
-	}`, val1, val2, val3, key1, val4, val5, val6, val7, val8, val9, val10, val11, val12, val13))
+		"Key20" {
+			"%s" 	{
+				"key22" "%s"
+			}
+		}
+	}`, string1, string2, string3, key1, string4, string5, string6, int1, int2, int3, int4, int5, float1, float2, key2, string7))
 			obj = struct {
 				Key1 string
 				Key2 string `vdf:"key2"`
@@ -90,46 +103,47 @@ func TestDecode(t *testing.T) {
 				Key17 bool
 				Key18 float32
 				Key19 float64
+				Key20 map[string]struct {
+					Key22 string `vdf:"key22"`
+				}
 			}{}
 		)
 
 		//nolint:gocritic
 		if err := vdf.NewDecoder(bytes.NewReader(data)).Decode(&obj); err != nil {
 			t.Fatal(err)
-		} else if obj.Key1 != val1 {
-			t.Fatalf("unexpected value %s looking for %s", obj.Key1, val1)
-		} else if obj.Key2 != val2 {
-			t.Fatalf("unexpected value %s looking for %s", obj.Key2, val2)
-		} else if obj.Key3.Key4 != val3 {
-			t.Fatalf("unexpected value %s looking for %s", obj.Key3.Key4, val3)
-		} else if obj.Key5[key1] != val4 {
-			t.Fatalf("unexpected value %s looking for %s in key %s", obj.Key5[key1], val4, key1)
+		} else if obj.Key1 != string1 {
+			t.Fatalf("unexpected value %s looking for %s", obj.Key1, string1)
+		} else if obj.Key2 != string2 {
+			t.Fatalf("unexpected value %s looking for %s", obj.Key2, string2)
+		} else if obj.Key3.Key4 != string3 {
+			t.Fatalf("unexpected value %s looking for %s", obj.Key3.Key4, string3)
+		} else if obj.Key5[key1] != string4 {
+			t.Fatalf("unexpected value %s looking for %s in key %s", obj.Key5[key1], string4, key1)
 		} else if obj.Key9 == nil {
 			t.Fatalf("unexpected nil struct pointer")
-		} else if obj.Key9.Key10 != val6 {
-			t.Fatalf("unexpected value %s looking for %s", obj.Key9.Key10, val6)
+		} else if obj.Key9.Key10 != string6 {
+			t.Fatalf("unexpected value %s looking for %s", obj.Key9.Key10, string6)
 		} else if obj.Key11 != "" {
 			t.Fatalf("unexpected value %s looking for empty string", obj.Key11)
-		} else if obj.Key12 != val7 {
-			t.Fatalf("unexpected value %d looking for %d", obj.Key12, val7)
-		} else if obj.Key13 != int8(val8) {
-			t.Fatalf("unexpected value %d looking for %d", obj.Key13, val8)
-		} else if obj.Key14 != int16(val9) {
-			t.Fatalf("unexpected value %d looking for %d", obj.Key14, val9)
-		} else if obj.Key15 != int32(val10) {
-			t.Fatalf("unexpected value %d looking for %d", obj.Key15, val10)
-		} else if obj.Key16 != int64(val11) {
-			t.Fatalf("unexpected value %d looking for %d", obj.Key16, val11)
+		} else if obj.Key12 != int1 {
+			t.Fatalf("unexpected value %d looking for %d", obj.Key12, int1)
+		} else if obj.Key13 != int8(int2) {
+			t.Fatalf("unexpected value %d looking for %d", obj.Key13, int2)
+		} else if obj.Key14 != int16(int3) {
+			t.Fatalf("unexpected value %d looking for %d", obj.Key14, int3)
+		} else if obj.Key15 != int32(int4) {
+			t.Fatalf("unexpected value %d looking for %d", obj.Key15, int4)
+		} else if obj.Key16 != int64(int5) {
+			t.Fatalf("unexpected value %d looking for %d", obj.Key16, int5)
 		} else if !obj.Key17 {
 			t.Fatalf("unexpected value %t looking for %t", obj.Key17, true)
-		} else if !floatEqual(obj.Key18, val12) {
-			t.Fatalf("unexpected value %f looking for %f", obj.Key18, val12)
-		} else if !floatEqual(obj.Key19, val13) {
-			t.Fatalf("unexpected value %f looking for %f", obj.Key19, val13)
+		} else if !floatEqual(obj.Key18, float1) {
+			t.Fatalf("unexpected value %f looking for %f", obj.Key18, float1)
+		} else if !floatEqual(obj.Key19, float2) {
+			t.Fatalf("unexpected value %f looking for %f", obj.Key19, float2)
+		} else if obj.Key20[key2].Key22 != string7 {
+			t.Fatalf("unexpected value %s looking for %s", obj.Key20[key2].Key22, string7)
 		}
 	}
-}
-
-func floatEqual[T float32 | float64](a, b T) bool {
-	return math.Abs(float64(a)-float64(b)) <= 0.0001
 }

@@ -78,8 +78,8 @@ func (d *Decoder) Decode(v any) error {
 		}
 	case reflect.Map:
 		isMap = true
-	default:
-		return fmt.Errorf("invalid type: %s", vRefType.Kind())
+		// default:
+		// 	return fmt.Errorf("invalid kind: %s", vRefType.Kind())
 	}
 
 	var (
@@ -174,18 +174,45 @@ func (d *Decoder) Decode(v any) error {
 						switch field.Kind() {
 						case reflect.Map:
 							if field.IsNil() && field.CanSet() {
-								// TODO: Handle struct pointer and map[string]anythingelse.
-								field.Set(reflect.ValueOf(map[string]any{}))
+								field.Set(
+									reflect.MakeMap(
+										reflect.MapOf(
+											field.Type().Key(),
+											field.Type().Elem(),
+										),
+									),
+								)
 							}
 						case reflect.Pointer:
 							if field.IsNil() && field.CanSet() {
-								field.Set(reflect.New(field.Type().Elem()))
+								field.Set(
+									reflect.New(field.Type().Elem()),
+								)
 							}
 						}
 
 						if err = d.Decode(field); err != nil {
 							return err
 						}
+					} else if isMap {
+						if vRefVal.IsNil() && vRefVal.CanSet() {
+							vRefVal.Set(
+								reflect.MakeMap(
+									reflect.MapOf(
+										vRefVal.Type().Key(),
+										vRefVal.Type().Elem(),
+									),
+								),
+							)
+						}
+
+						field := reflect.New(vRefVal.Type().Elem())
+
+						if err = d.Decode(field); err != nil {
+							return err
+						}
+
+						vRefVal.SetMapIndex(reflect.ValueOf(string(key)), field.Elem())
 					} else {
 						if err = d.Decode(&map[string]any{}); err != nil {
 							return err
