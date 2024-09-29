@@ -1,3 +1,4 @@
+//nolint:gosec
 package vdf_test
 
 import (
@@ -11,7 +12,7 @@ import (
 	vdf "github.com/frantjc/go-encoding-vdf"
 )
 
-var rnd = rand.New(rand.NewSource(time.Now().UnixNano())) //nolint:gosec
+var rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 const (
 	letters      = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
